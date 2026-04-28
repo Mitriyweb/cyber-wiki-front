@@ -1,0 +1,6 @@
+{
+  "count": 0,
+  "description": "Maximum allowed eslint-disable directives in src/**/*.{ts,tsx,js,jsx}",
+  "lastUpdated": "2026-04-27",
+  "note": "Project starts with zero eslint-disable directives. noInlineConfig is enforced via ESLint config."
+}
