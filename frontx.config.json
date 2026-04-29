@@ -1,0 +1,6 @@
+{
+  "frontx": true,
+  "layer": "app",
+  "uikit": "shadcn",
+  "packageManager": "npm"
+}
