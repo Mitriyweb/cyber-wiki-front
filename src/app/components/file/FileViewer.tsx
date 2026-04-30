@@ -5,7 +5,7 @@
  * and raw line-numbered source view for all files.
  */
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { eventBus, useTranslation } from '@cyberfabric/react';
 import { trim } from 'lodash';
 import {
@@ -31,6 +31,7 @@ import { MdRenderer } from './MdRenderer';
 import BlameView from './BlameView';
 import { DraftDiffView } from '@/app/components/changes/DraftDiffView';
 import { ConfirmDialog } from '@/app/components/primitives/ConfirmDialog';
+import { ViewLoadingFallback } from '@/app/components/loading/ViewLoadingFallback';
 import { Modal, ModalSize } from '@/app/components/primitives/Modal';
 import { FileStatus } from './FileStatus';
 import { HttpStatus } from '@/app/lib/httpStatus';
@@ -47,6 +48,11 @@ import {
   type BlameLine,
   type Space,
 } from '@/app/api/wikiTypes';
+
+// Monaco-backed editor for non-markdown edit mode. Lazy-loaded so the ~3-4 MB
+// `monaco-editor` bundle stays out of the initial chunk for users who only
+// browse / open markdown files.
+const CodeEditor = lazy(() => import('@/app/components/primitives/CodeEditor'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -171,9 +177,10 @@ const FileViewer: React.FC<FileViewerProps> = ({
   const languageLabel = useMemo(() => getLanguageLabel(fileName), [fileName]);
   const fileType = useMemo(() => detectFileType(fileName), [fileName]);
   const isMarkdown = fileType === FileType.Markdown;
-  // Preview / WYSIWYG only makes sense for markdown. Code / yaml / plain
-  // text show their raw form regardless, so we hide the Eye/Code toggle
-  // and lock the viewMode to Source for everything except markdown.
+  // The Source/Preview toggle is only meaningful for markdown (raw text vs
+  // rendered HTML). Non-markdown files render through Monaco regardless of
+  // viewMode, so showing two buttons that produce identical output would
+  // just be noise — gate the toggle on `isMarkdown`.
   const hasUsefulPreview = isMarkdown;
   const isPreviewable = hasUsefulPreview;
   const isDirty = isEditMode && content !== null && draft !== content;
@@ -250,10 +257,10 @@ const FileViewer: React.FC<FileViewerProps> = ({
     return out;
   }, [showDraft, draftContent, draftOriginal, content]);
 
-  // Force Source when the file has no useful preview AND the user landed in
-  // Preview mode — Preview is the only mode that doesn't render anything
-  // meaningful for non-markdown. Diff/Blame work for any file and must NOT
-  // be reverted here, otherwise their toolbar buttons silently no-op.
+  // Force Source whenever the file lands in Preview but doesn't have a useful
+  // preview to render (non-markdown). Preview is the only mode without a
+  // fallback for non-markdown; Diff/Blame work for any file and must NOT be
+  // reverted here, otherwise their toolbar buttons silently no-op.
   useEffect(() => {
     if (!hasUsefulPreview && viewMode === FileViewMode.Preview) {
       setViewMode(FileViewMode.Source);
@@ -723,21 +730,23 @@ const FileViewer: React.FC<FileViewerProps> = ({
         {(hasUsefulPreview || (hasUnsavedDraft && draftContent !== null) || !!space) && !isEditMode && (
           <div className="flex items-center border border-border rounded overflow-hidden flex-shrink-0">
             {isPreviewable && (
-              <button
-                onClick={() => setViewMode(FileViewMode.Preview)}
-                className={`p-1.5 transition-colors ${viewMode === FileViewMode.Preview ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-                title={t('fileViewer.previewTitle')}
-              >
-                <Eye size={14} />
-              </button>
+              <>
+                <button
+                  onClick={() => setViewMode(FileViewMode.Preview)}
+                  className={`p-1.5 transition-colors ${viewMode === FileViewMode.Preview ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+                  title={t('fileViewer.previewTitle')}
+                >
+                  <Eye size={14} />
+                </button>
+                <button
+                  onClick={() => setViewMode(FileViewMode.Source)}
+                  className={`p-1.5 transition-colors ${viewMode === FileViewMode.Source ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+                  title={t('fileViewer.sourceTitle')}
+                >
+                  <Code size={14} />
+                </button>
+              </>
             )}
-            <button
-              onClick={() => setViewMode(FileViewMode.Source)}
-              className={`p-1.5 transition-colors ${viewMode === FileViewMode.Source ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-              title={t('fileViewer.sourceTitle')}
-            >
-              <Code size={14} />
-            </button>
             {hasUnsavedDraft && draftContent !== null && content !== null && (
               <button
                 onClick={() => setViewMode(FileViewMode.Diff)}
@@ -902,18 +911,19 @@ const FileViewer: React.FC<FileViewerProps> = ({
       )}
 
       {/* Edit mode for non-Markdown:
-          - Source view → editable textarea (default)
+          - Source view → Monaco editor (syntax highlighting, line numbers, folding)
           - Preview view → read-only FileRenderer of the current draft
           The header's Eye / Code toggle drives this. */}
       {!loading && !error && isEditMode && !isMarkdown && (
         <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-background">
           {viewMode === FileViewMode.Source ? (
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              spellCheck={false}
-              className="flex-1 w-full font-mono text-sm leading-relaxed p-4 bg-background text-foreground focus:outline-none resize-none"
-            />
+            <Suspense fallback={<ViewLoadingFallback />}>
+              <CodeEditor
+                value={draft}
+                language={getLanguageLabel(fileName)}
+                onChange={setDraft}
+              />
+            </Suspense>
           ) : (
             <div className="flex-1 overflow-auto">
               <FileRenderer content={draft} filePath={filePath} mode={viewMode} />

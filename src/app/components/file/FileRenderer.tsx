@@ -6,18 +6,23 @@
  * source view. Used directly in FileViewer, independent of MFE/enrichments.
  */
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useTranslation } from '@cyberfabric/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { MessageSquare } from 'lucide-react';
 import { CodeBlock } from '@/app/components/primitives/CodeBlock';
+import { ViewLoadingFallback } from '@/app/components/loading/ViewLoadingFallback';
 import {
   FileViewMode,
   FileType,
   detectFileType,
   getLanguageLabel,
 } from '@/app/api/wikiTypes';
+
+// Monaco-backed read-only viewer; lazy-loaded so the ~3-4 MB monaco bundle
+// only ships when the user actually opens a non-markdown file.
+const CodeViewer = lazy(() => import('@/app/components/primitives/CodeViewer'));
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -297,6 +302,32 @@ const FileRenderer: React.FC<FileRendererProps> = ({
   commentLines,
   changedLines,
 }) => {
+  const fileName = filePath.split('/').pop() || filePath;
+  const fileType = detectFileType(fileName);
+  const isMarkdown = fileType === FileType.Markdown;
+  const language = getLanguageLabel(fileName);
+
+  // Non-markdown: Monaco is *the* render — syntax highlighting, folding, glyph
+  // margins for comments, change-bar decorations. There's no "raw vs render"
+  // distinction worth surfacing (Monaco renders plain text fine when the
+  // language is unknown), so both Source and Preview converge here.
+  if (!isMarkdown) {
+    return (
+      <Suspense fallback={<ViewLoadingFallback />}>
+        <CodeViewer
+          value={content}
+          language={language}
+          selectedLines={selectedLines}
+          onLineClick={onLineClick}
+          commentLines={commentLines}
+          changedLines={changedLines}
+        />
+      </Suspense>
+    );
+  }
+
+  // Markdown: real raw-vs-render split. Source = line-numbered table for
+  // per-line commenting; Preview = rendered HTML via remark.
   if (mode === FileViewMode.Source) {
     return (
       <SourceView
@@ -308,25 +339,15 @@ const FileRenderer: React.FC<FileRendererProps> = ({
       />
     );
   }
-
-  const fileName = filePath.split('/').pop() || filePath;
-  const fileType = detectFileType(fileName);
-
-  if (fileType === FileType.Markdown) {
-    return (
-      <MarkdownPreview
-        content={content}
-        selectedLines={selectedLines}
-        onLineClick={onLineClick}
-        commentLines={commentLines}
-        changedLines={changedLines}
-      />
-    );
-  }
-
-  // YAML, Code, and other non-markdown files — syntax-highlighted preview
-  const language = getLanguageLabel(fileName);
-  return <CodeBlock content={content} language={language} />;
+  return (
+    <MarkdownPreview
+      content={content}
+      selectedLines={selectedLines}
+      onLineClick={onLineClick}
+      commentLines={commentLines}
+      changedLines={changedLines}
+    />
+  );
 };
 
 export default FileRenderer;

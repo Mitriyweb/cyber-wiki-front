@@ -26,6 +26,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
+    // Monaco ships its own AMD-style bundle and pre-bundling explodes both
+    // dev startup and the cache size; let `@monaco-editor/react` lazy-load it.
+    exclude: ['monaco-editor'],
   },
   build: {
     target: 'esnext',
@@ -34,6 +37,12 @@ export default defineConfig({
         manualChunks(id) {
           // Split node_modules into vendor chunks
           if (id.includes('node_modules')) {
+            // Monaco is ~3-4 MB; keep it isolated so the rest of `vendor`
+            // stays small and Monaco only loads when CodeEditor/CodeViewer
+            // are first rendered (they are React.lazy-loaded).
+            if (id.includes('monaco-editor') || id.includes('@monaco-editor')) {
+              return 'vendor-monaco';
+            }
             if (id.includes('react-dom')) {
               return 'vendor-react-dom';
             }
