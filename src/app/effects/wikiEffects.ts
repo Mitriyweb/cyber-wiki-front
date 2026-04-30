@@ -6,9 +6,59 @@
  */
 
 import { eventBus, apiRegistry } from '@cyberfabric/react';
+import { toLower } from 'lodash';
 import { SpacesApiService, TreeNodeType, type TreeNode } from '@/app/api';
 import { FileMappingApiService } from '@/app/api/FileMappingApiService';
 import { extractErrorMessage } from '@/app/lib/errorMessage';
+import { describeError, notify } from '@/app/lib/notify';
+import { HttpStatus } from '@/app/lib/httpStatus';
+import { t } from '@/app/lib/i18n';
+
+interface UpstreamHtmlError {
+  /** Set to a known git-provider status when the HTML body matches one of
+   *  the patterns below. Omitted for the generic "looks like HTML" case. */
+  status?: HttpStatus;
+  message: string;
+}
+
+/**
+ * Detect an HTML response that the upstream Git provider sent in place of
+ * file content (typically a Bitbucket Server / GitHub login page when the
+ * service token expired). The backend bubbles the body into `content` with
+ * a 200 status, so we have to sniff the payload here instead of relying on
+ * an HTTP error.
+ *
+ * Returns `{ status, message }` when the body looks like an auth/error
+ * page, otherwise null. The `message` field is a fallback for the legacy
+ * banner; FileViewer uses `status` to render a proper status placeholder.
+ */
+function detectUpstreamHtmlAuthError(content: string): UpstreamHtmlError | null {
+  const head = toLower(content.slice(0, 2048));
+  if (!head.startsWith('<!doctype html') && !head.startsWith('<html')) {
+    return null;
+  }
+  if (/\b401\b|unauthorized/.test(head)) {
+    return {
+      status: HttpStatus.Unauthorized,
+      message: t('errors.upstream.unauthorized'),
+    };
+  }
+  if (/\b403\b|forbidden/.test(head)) {
+    return {
+      status: HttpStatus.Forbidden,
+      message: t('errors.upstream.forbidden'),
+    };
+  }
+  if (/\b404\b|not found/.test(head)) {
+    return {
+      status: HttpStatus.NotFound,
+      message: t('errors.upstream.notFound'),
+    };
+  }
+  return {
+    message: t('errors.upstream.htmlBody'),
+  };
+}
 
 export function registerWikiEffects(): void {
   // Load spaces (favorites + recent + all)
@@ -29,7 +79,10 @@ export function registerWikiEffects(): void {
         all: all || [],
       });
     } catch (error) {
-      console.error('Failed to load spaces:', error);
+      notify.error(
+        describeError(error instanceof Error ? error : null, t('errors.failedToLoadSpaces')),
+        { dev: true },
+      );
     }
   });
 
@@ -47,7 +100,10 @@ export function registerWikiEffects(): void {
       // Mark as visited for recent tracking
       await spacesService.markVisited(space.slug);
     } catch (error) {
-      console.error('Failed to select space:', error);
+      notify.error(
+        describeError(error instanceof Error ? error : null, t('errors.failedToSelectSpace')),
+        { dev: true },
+      );
       eventBus.emit('wiki/space/selected', { space });
     }
   });
@@ -64,7 +120,10 @@ export function registerWikiEffects(): void {
       // Reload spaces to get updated favorites/recent
       eventBus.emit('wiki/spaces/load');
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      notify.error(
+        describeError(error instanceof Error ? error : null, t('errors.failedToToggleFavorite')),
+        { dev: true },
+      );
     }
   });
 
@@ -80,7 +139,7 @@ export function registerWikiEffects(): void {
       }
     } catch (error) {
       eventBus.emit('wiki/tree/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to load file tree'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToLoadFileTree')),
       });
     }
   });
@@ -112,7 +171,7 @@ export function registerWikiEffects(): void {
       });
       eventBus.emit('wiki/tree/loaded', { tree, path });
     } catch (error) {
-      const message = extractErrorMessage(error instanceof Error ? error : null, 'Failed to load subtree');
+      const message = extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToLoadSubtree'));
       eventBus.emit('wiki/tree/error', { error: message });
     }
   });
@@ -128,7 +187,7 @@ export function registerWikiEffects(): void {
       }
     } catch (error) {
       eventBus.emit('wiki/space/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to create space'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToCreateSpace')),
       });
     }
   });
@@ -142,7 +201,7 @@ export function registerWikiEffects(): void {
       eventBus.emit('wiki/spaces/load');
     } catch (error) {
       eventBus.emit('wiki/space/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to update space'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToUpdateSpace')),
       });
     }
   });
@@ -156,7 +215,7 @@ export function registerWikiEffects(): void {
       eventBus.emit('wiki/spaces/load');
     } catch (error) {
       eventBus.emit('wiki/space/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to delete space'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToDeleteSpace')),
       });
     }
   });
@@ -206,7 +265,7 @@ export function registerWikiEffects(): void {
         filePath,
         error: extractErrorMessage(
           error instanceof Error ? error : null,
-          'Failed to load file blame',
+          t('errors.failedToLoadFileBlame'),
         ),
       });
     }
@@ -231,12 +290,25 @@ export function registerWikiEffects(): void {
         branch: space.git_default_branch || 'main',
       });
       const content = result.content || '';
+      // Sniff for upstream auth errors that came back as a 200 with an
+      // HTML body (Bitbucket Server / GitHub login pages). Surface them as
+      // a real error so FileViewer renders the status placeholder instead
+      // of dumping the HTML to the user.
+      const upstreamAuthError = detectUpstreamHtmlAuthError(content);
+      if (upstreamAuthError) {
+        eventBus.emit('wiki/file/error', {
+          filePath,
+          error: upstreamAuthError.message,
+          status: upstreamAuthError.status,
+        });
+        return;
+      }
       fileContentCache.set(key, content);
       eventBus.emit('wiki/file/loaded', { filePath, content });
     } catch (error) {
       eventBus.emit('wiki/file/error', {
         filePath,
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to load file content'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToLoadFileContent')),
       });
     }
   });
@@ -268,10 +340,12 @@ export function registerWikiEffects(): void {
         currentGitUsernames: data.current_git_usernames || [],
       });
     } catch (error) {
-      console.error('Failed to load pull requests:', error);
-      eventBus.emit('wiki/my-reviews/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to load pull requests'),
-      });
+      const message = extractErrorMessage(
+        error instanceof Error ? error : null,
+        t('errors.failedToLoadPullRequests'),
+      );
+      notify.error(message, { dev: true });
+      eventBus.emit('wiki/my-reviews/error', { error: message });
     }
   });
 }

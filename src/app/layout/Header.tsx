@@ -6,7 +6,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppSelector, useTheme, eventBus, type HeaderState } from '@cyberfabric/react';
+import { useAppSelector, useTheme, useTranslation, eventBus, type HeaderState } from '@cyberfabric/react';
+import { trim, upperFirst } from 'lodash';
 import { User, LogOut, Sun, Moon, Monitor, Palette, Settings, KeyRound, AlertTriangle, ScrollText } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/primitives/Avatar';
 import { Skeleton } from '@/app/components/primitives/Skeleton';
@@ -20,6 +21,7 @@ export interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ children }) => {
+  const { t } = useTranslation();
   const headerState = useAppSelector((state) => state['layout/header'] as HeaderState | undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,12 +68,12 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
   }, [menuOpen]);
 
   const getInitials = (): string => {
-    if (!user?.displayName) return (user?.email?.[0] || '?').toUpperCase();
-    const parts = user.displayName.trim().split(/\s+/);
+    if (!user?.displayName) return upperFirst(user?.email?.[0] || '?');
+    const parts = trim(user.displayName).split(/\s+/);
     if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      return upperFirst(`${parts[0][0]}${parts[parts.length - 1][0]}`);
     }
-    return user.displayName.slice(0, 2).toUpperCase();
+    return upperFirst(user.displayName.slice(0, 2));
   };
 
   const { currentTheme, themes, setTheme } = useTheme();
@@ -121,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
           <button
             onClick={() => setThemeOpen((prev) => !prev)}
             className="flex items-center gap-1 p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            title="Theme"
+            title={t('header.themeTitle')}
           >
             <Palette size={16} />
             {themeIconFor(currentTheme ?? 'default')}
@@ -151,12 +153,12 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
             <button
               onClick={() => { window.location.hash = Urls.Tokens; }}
               className="flex items-center p-1.5 rounded-md text-amber-500 hover:bg-amber-500/10 transition-colors"
-              title="Service token issues detected"
+              title={t('header.tokenIssuesTitle')}
             >
               <AlertTriangle size={18} />
             </button>
             <div className="absolute right-0 top-full mt-1 w-72 rounded-md border border-border bg-popover shadow-lg p-3 z-50 hidden group-hover:block">
-              <p className="text-xs font-semibold text-popover-foreground mb-2">Token issues ({tokenFailures.length})</p>
+              <p className="text-xs font-semibold text-popover-foreground mb-2">{t('header.tokenIssuesHeader', { count: tokenFailures.length })}</p>
               <ul className="space-y-1.5">
                 {tokenFailures.map((f) => (
                   <li key={f.id} className="text-xs text-muted-foreground">
@@ -181,13 +183,13 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
             <button
               onClick={() => setMenuOpen((prev) => !prev)}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              title="User menu"
+              title={t('header.userMenuTitle')}
             >
               <Avatar className="h-8 w-8">
-                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.displayName || user?.email || 'User'} />}
+                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.displayName || user?.email || t('header.userFallback')} />}
                 <AvatarFallback>{getInitials()}</AvatarFallback>
               </Avatar>
-              <span>{user?.displayName || user?.email || 'User'}</span>
+              <span>{user?.displayName || user?.email || t('header.userFallback')}</span>
             </button>
 
             {menuOpen && (
@@ -197,14 +199,14 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors"
                 >
                   <User size={16} />
-                  Profile
+                  {t('header.profile')}
                 </button>
                 <button
                   onClick={() => { window.location.hash = Urls.Tokens; setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors"
                 >
                   <KeyRound size={16} />
-                  Tokens
+                  {t('header.tokens')}
                 </button>
                 {debugMode && (
                   <button
@@ -212,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors"
                   >
                     <ScrollText size={16} />
-                    Logs
+                    {t('header.logs')}
                   </button>
                 )}
                 <button
@@ -220,14 +222,14 @@ export const Header: React.FC<HeaderProps> = ({ children }) => {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors"
                 >
                   <Settings size={16} />
-                  Space Configuration
+                  {t('header.spaceConfiguration')}
                 </button>
                 <button
                   onClick={() => { logoutAction(); setMenuOpen(false); }}
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent transition-colors"
                 >
                   <LogOut size={16} />
-                  Logout
+                  {t('header.logout')}
                 </button>
               </div>
             )}

@@ -11,6 +11,7 @@ import trim from 'lodash/trim';
 import { eventBus, setUser, setHeaderLoading, apiRegistry, type AppDispatch, type HeaderUser } from '@cyberfabric/react';
 import { AccountsApiService, type ApiUser, type MeResponse } from '@/app/api';
 import { AuthPlugin } from '@/app/api/AuthPlugin';
+import { t } from '@/app/lib/i18n';
 
 /**
  * Convert API user to header user info
@@ -64,8 +65,8 @@ export function registerBootstrapEffects(appDispatch: AppDispatch): void {
         eventBus.emit('app/auth/state', { authenticated: true });
         eventBus.emit('profile/tokens/validate-all');
       }
-    } catch (error) {
-      console.warn('Failed to fetch user (not authenticated):', error);
+    } catch {
+      // Expected when there is no session yet — silent, just flip auth state.
       dispatch(setHeaderLoading(false));
       eventBus.emit('app/auth/state', { authenticated: false });
     }
@@ -89,7 +90,7 @@ export function registerBootstrapEffects(appDispatch: AppDispatch): void {
         eventBus.emit('app/user/fetch');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Login failed';
+      const message = error instanceof Error ? error.message : t('errors.loginFailed');
       eventBus.emit('app/auth/login/error', { error: message });
     }
   });

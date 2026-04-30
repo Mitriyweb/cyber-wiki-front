@@ -7,6 +7,7 @@
 
 import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { EnrichmentsApiService } from '@/app/api';
+import { t } from '@/app/lib/i18n';
 
 export function registerEnrichmentEffects(): void {
   // Load enrichments for a source URI
@@ -17,7 +18,7 @@ export function registerEnrichmentEffects(): void {
       const enrichments = await service.getEnrichments(sourceUri);
       eventBus.emit('wiki/enrichments/loaded', { sourceUri, enrichments });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load enrichments';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadEnrichments');
       eventBus.emit('wiki/enrichments/error', { error: message });
     }
   });
@@ -29,7 +30,7 @@ export function registerEnrichmentEffects(): void {
       const comments = await service.listComments(sourceUri);
       eventBus.emit('wiki/comments/loaded', { sourceUri, comments: comments || [] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load comments';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadComments');
       eventBus.emit('wiki/comment/error', { error: message });
     }
   });
@@ -41,7 +42,7 @@ export function registerEnrichmentEffects(): void {
       const comments = await service.listAllComments({ isResolved });
       eventBus.emit('wiki/comments/all/loaded', { comments: comments || [] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load all comments';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadAllComments');
       eventBus.emit('wiki/comment/error', { error: message });
     }
   });
@@ -60,7 +61,7 @@ export function registerEnrichmentEffects(): void {
       eventBus.emit('wiki/comment/created', { comment });
       eventBus.emit('wiki/comments/load', { sourceUri });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create comment';
+      const message = error instanceof Error ? error.message : t('errors.failedToCreateComment');
       eventBus.emit('wiki/comment/error', { error: message });
     }
   });
@@ -73,7 +74,7 @@ export function registerEnrichmentEffects(): void {
       eventBus.emit('wiki/comment/deleted', { commentId });
       eventBus.emit('wiki/comments/load', { sourceUri });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete comment';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeleteComment');
       eventBus.emit('wiki/comment/error', { error: message });
     }
   });
@@ -88,7 +89,7 @@ export function registerEnrichmentEffects(): void {
       eventBus.emit('wiki/comment/resolved', { comment });
       eventBus.emit('wiki/comments/load', { sourceUri });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to resolve comment';
+      const message = error instanceof Error ? error.message : t('errors.failedToResolveComment');
       eventBus.emit('wiki/comment/error', { error: message });
     }
   });

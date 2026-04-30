@@ -4,6 +4,8 @@
  * (spaces, file trees, documents, comments)
  */
 
+import type { ExtraJsonValue } from './types';
+
 // =============================================================================
 // URL / Route constants
 // =============================================================================
@@ -647,7 +649,7 @@ export type GitOpsLogEntry = {
   space_slug: string;
   branch_name: string;
   /** Loose key/value bag — commit_sha, pr_id, conflict_files, etc. */
-  payload: Record<string, unknown>;
+  payload: Record<string, ExtraJsonValue>;
 };
 
 export type GitOpsLogResponse = {
@@ -747,7 +749,7 @@ export type ServiceTokenCreate = {
 export type TokenValidationResult = {
   valid: boolean;
   message: string;
-  details: Record<string, unknown>;
+  details: Record<string, ExtraJsonValue>;
 };
 
 // =============================================================================
@@ -803,6 +805,10 @@ export type UserSettings = {
    *  viewers, future devtools). Off by default for regular users; the toggle
    *  lives next to the cache toggle in Profile. */
   debugMode: boolean;
+  /** Stream `[Performance]` traces for every API call to the browser
+   *  console. Independent from `debugMode` so DevTools tabs stay focused on
+   *  one problem at a time. */
+  perfLogEnabled: boolean;
 };
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -811,6 +817,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   lastOpenedPath: {},
   theme: ThemeMode.System,
   debugMode: false,
+  perfLogEnabled: false,
 };
 
 /**

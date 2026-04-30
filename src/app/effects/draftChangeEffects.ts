@@ -9,6 +9,7 @@ import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { toLower } from 'lodash';
 import { DraftChangesApiService } from '@/app/api/DraftChangesApiService';
 import { extractErrorMessage } from '@/app/lib/errorMessage';
+import { t } from '@/app/lib/i18n';
 
 export function registerDraftChangeEffects(): void {
   // Load drafts (optionally filtered by space)
@@ -22,7 +23,7 @@ export function registerDraftChangeEffects(): void {
       eventBus.emit('wiki/drafts/loaded', { spaceId, drafts: drafts ?? [] });
     } catch (error) {
       eventBus.emit('wiki/draft/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to load draft changes'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToLoadDraftChanges')),
       });
     }
   });
@@ -37,7 +38,7 @@ export function registerDraftChangeEffects(): void {
       }
     } catch (error) {
       eventBus.emit('wiki/draft/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to load draft change'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToLoadDraftChange')),
       });
     }
   });
@@ -64,7 +65,7 @@ export function registerDraftChangeEffects(): void {
       }
     } catch (error) {
       eventBus.emit('wiki/draft/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to save draft change'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToSaveDraftChange')),
       });
     }
   });
@@ -79,7 +80,7 @@ export function registerDraftChangeEffects(): void {
       await service.discard(changeId);
       eventBus.emit('wiki/draft/discarded', { changeId });
     } catch (error) {
-      const message = extractErrorMessage(error instanceof Error ? error : null, 'Failed to discard draft change');
+      const message = extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToDiscardDraftChange'));
       const lower = toLower(message);
       const is404 =
         lower.includes('404') ||
@@ -117,12 +118,12 @@ export function registerDraftChangeEffects(): void {
         });
       } else {
         eventBus.emit('wiki/draft/error', {
-          error: result.message ?? 'Commit failed',
+          error: result.message ?? t('errors.commitFailed'),
         });
       }
     } catch (error) {
       eventBus.emit('wiki/draft/error', {
-        error: extractErrorMessage(error instanceof Error ? error : null, 'Failed to commit draft changes'),
+        error: extractErrorMessage(error instanceof Error ? error : null, t('errors.failedToCommitDraftChanges')),
       });
     }
   });

@@ -4,7 +4,7 @@
  */
 
 export { AccountsApiService } from './AccountsApiService';
-export { UserRole, type ApiUser, type UserExtra, type GetCurrentUserResponse, type LoginRequest, type LoginResponse, type MeResponse } from './types';
+export { UserRole, type ApiUser, type UserExtra, type ExtraJsonValue, type GetCurrentUserResponse, type LoginRequest, type LoginResponse, type MeResponse } from './types';
 
 export { SpacesApiService } from './SpacesApiService';
 export { EnrichmentsApiService } from './EnrichmentsApiService';

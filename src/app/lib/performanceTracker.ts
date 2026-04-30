@@ -3,6 +3,12 @@
  * Logs performance metrics and warns about slow operations.
  *
  * Ported from doclab utils/performanceTracker.ts.
+ *
+ * Both the metric ring-buffer AND the console traces are gated behind the
+ * `perfLogEnabled` user setting (Profile → Performance log toggle). When
+ * the toggle is OFF, `pushMetric` is a no-op and `trackPerformance` skips
+ * timing/recording entirely. Toggle it ON only when actively diagnosing
+ * a slow request.
  */
 
 export interface PerformanceMetric {
@@ -17,13 +23,37 @@ const SLOW_THRESHOLD_MS = 1000;
 const metrics: PerformanceMetric[] = [];
 
 /**
+ * Live flag set from the userSettings effect — `setPerfLogEnabled(true)`
+ * after `user/settings/loaded` (see effects/userSettingsEffects). Kept as a
+ * module-local mutable boolean so `trackPerformance` can read it without an
+ * eventBus subscription per call.
+ */
+let perfLogEnabled = false;
+
+export function setPerfLogEnabled(value: boolean): void {
+  perfLogEnabled = value;
+}
+
+export function isPerfLogEnabled(): boolean {
+  return perfLogEnabled;
+}
+
+/**
  * Track an API call or operation performance.
+ *
+ * When the perf log toggle is OFF this is just a passthrough — no timing,
+ * no recording, no console output — so production sessions don't pay for
+ * Blob-serialising every response just to discard it.
  */
 export async function trackPerformance<T>(
   operation: string,
   fn: () => Promise<T>,
   url?: string,
 ): Promise<T> {
+  if (!perfLogEnabled) {
+    return fn();
+  }
+
   const startTime = performance.now();
   const startTimestamp = Date.now();
 
@@ -41,36 +71,29 @@ export async function trackPerformance<T>(
       }
     }
 
-    const metric: PerformanceMetric = {
+    metrics.push({
       operation,
       duration,
       dataSize,
       timestamp: startTimestamp,
       url,
-    };
-    metrics.push(metric);
+    });
 
     const dataSizeStr = dataSize ? ` (${formatBytes(dataSize)})` : '';
     const durationStr = duration.toFixed(0);
+    const meta = { url, duration, dataSize };
     if (duration > SLOW_THRESHOLD_MS) {
-      console.warn(
-        `[Performance] SLOW: ${operation} took ${durationStr}ms${dataSizeStr}`,
-        { url, duration, dataSize },
-      );
+      console.warn(`[Performance] SLOW: ${operation} took ${durationStr}ms${dataSizeStr}`, meta);
     } else {
-      console.log(`[Performance] ${operation} took ${durationStr}ms${dataSizeStr}`, {
-        url,
-        duration,
-        dataSize,
-      });
+      console.info(`[Performance] ${operation} took ${durationStr}ms${dataSizeStr}`, meta);
     }
     return result;
   } catch (error) {
     const duration = performance.now() - startTime;
-    console.error(
-      `[Performance] ${operation} failed after ${duration.toFixed(0)}ms`,
-      { url, error },
-    );
+    console.error(`[Performance] ${operation} failed after ${duration.toFixed(0)}ms`, {
+      url,
+      error,
+    });
     throw error;
   }
 }
@@ -92,6 +115,7 @@ export function getSlowOperations(threshold = SLOW_THRESHOLD_MS): PerformanceMet
 }
 
 export function pushMetric(metric: PerformanceMetric): void {
+  if (!perfLogEnabled) return;
   metrics.push(metric);
 }
 

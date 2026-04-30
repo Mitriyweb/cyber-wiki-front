@@ -8,9 +8,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   useAppSelector,
+  useTranslation,
   eventBus,
   type MenuState,
 } from '@cyberfabric/react';
+import { upperFirst } from 'lodash';
+import { setMenuCollapsed } from '@/app/actions/layoutActions';
 import { Home, ChevronDown, GitPullRequest, MessageSquare, Edit3, Star } from 'lucide-react';
 import {
   Sidebar,
@@ -20,7 +23,7 @@ import {
   SidebarMenuButton,
   SidebarMenuIcon,
   SidebarHeader,
-} from '@/app/components/primitives/Sidebar';
+} from '@/app/components/primitives/sidebar';
 import { HAI3LogoIcon } from '@/app/icons/HAI3LogoIcon';
 import { HAI3LogoTextIcon } from '@/app/icons/HAI3LogoTextIcon';
 import { Urls } from '@/app/api';
@@ -48,6 +51,7 @@ export interface MenuProps {
 }
 
 export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
+  const { t } = useTranslation();
   const menuState = useAppSelector((state) => state['layout/menu'] as MenuState | undefined);
   const collapsed = menuState?.collapsed ?? false;
 
@@ -75,7 +79,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
   }, []);
 
   const handleToggleCollapse = () => {
-    eventBus.emit('layout/menu/collapsed', { collapsed: !collapsed });
+    setMenuCollapsed(!collapsed);
   };
 
   const handleNavigate = useCallback((view: string) => {
@@ -108,7 +112,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
               onClick={() => handleNavigate(Urls.Dashboard)}
             >
               <SidebarMenuIcon><Home className="size-4" /></SidebarMenuIcon>
-              <span>Dashboard</span>
+              <span>{t('menu.dashboard')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
@@ -119,7 +123,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
               onClick={() => handleNavigate(Urls.Comments)}
             >
               <SidebarMenuIcon><MessageSquare className="size-4" /></SidebarMenuIcon>
-              <span>Comments</span>
+              <span>{t('menu.comments')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
@@ -130,7 +134,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
               onClick={() => handleNavigate(Urls.Changes)}
             >
               <SidebarMenuIcon><Edit3 className="size-4" /></SidebarMenuIcon>
-              <span>Changes</span>
+              <span>{t('menu.changes')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
@@ -141,7 +145,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
               onClick={() => handleNavigate(Urls.PRs)}
             >
               <SidebarMenuIcon><GitPullRequest className="size-4" /></SidebarMenuIcon>
-              <span>PRs</span>
+              <span>{t('menu.prs')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
 
@@ -164,7 +168,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
                       <span
                         className={`flex size-5 shrink-0 items-center justify-center rounded text-[0.625rem] font-bold text-white ${getSpaceColor(idx)}`}
                       >
-                        {space.name.charAt(0).toUpperCase()}
+                        {upperFirst(space.name)[0] ?? ''}
                       </span>
                     </SidebarMenuIcon>
                     <span className="truncate">{space.name}</span>
@@ -179,7 +183,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
               className="flex w-full items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-mainMenu-foreground/60 hover:text-mainMenu-foreground/80"
               onClick={() => setSpacesExpanded((v) => !v)}
             >
-              <span>My Spaces</span>
+              <span>{t('menu.mySpaces')}</span>
               <ChevronDown
                 className={`size-3.5 transition-transform duration-200 ${spacesExpanded ? '' : '-rotate-90'}`}
               />
@@ -200,7 +204,7 @@ export const Menu: React.FC<MenuProps> = ({ children, navigate }) => {
                         <span
                           className={`flex size-5 shrink-0 items-center justify-center rounded text-[0.625rem] font-bold text-white ${getSpaceColor(idx)}`}
                         >
-                          {space.name.charAt(0).toUpperCase()}
+                          {upperFirst(space.name)[0] ?? ''}
                         </span>
                         <span className="truncate">{space.name}</span>
                         {favorites.some(f => f.space_slug === space.slug) && (

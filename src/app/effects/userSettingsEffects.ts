@@ -7,6 +7,7 @@
 
 import { eventBus } from '@cyberfabric/react';
 import { DEFAULT_USER_SETTINGS, type UserSettings } from '@/app/api';
+import { setPerfLogEnabled } from '@/app/lib/performanceTracker';
 
 const STORAGE_KEY = 'cyberwiki:userSettings';
 
@@ -37,9 +38,13 @@ function writeToStorage(settings: UserSettings): void {
 
 export function registerUserSettingsEffects(): void {
   let current: UserSettings = readFromStorage();
+  // Seed module-local toggles from storage so trackPerformance honours the
+  // user's saved choice on the very first API call after a hard reload.
+  setPerfLogEnabled(current.perfLogEnabled);
 
   eventBus.on('user/settings/load', () => {
     current = readFromStorage();
+    setPerfLogEnabled(current.perfLogEnabled);
     eventBus.emit('user/settings/loaded', { settings: current });
   });
 
@@ -51,6 +56,7 @@ export function registerUserSettingsEffects(): void {
       lastOpenedPath: { ...current.lastOpenedPath, ...(patch.lastOpenedPath ?? {}) },
     };
     writeToStorage(current);
+    setPerfLogEnabled(current.perfLogEnabled);
     eventBus.emit('user/settings/updated', { settings: current });
   });
 }

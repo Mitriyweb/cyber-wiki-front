@@ -4,6 +4,7 @@
 
 import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { ApiTokensApiService } from '@/app/api/ApiTokensApiService';
+import { t } from '@/app/lib/i18n';
 
 export function registerApiTokensEffects(): void {
   eventBus.on('profile/api-tokens/load', async () => {
@@ -13,7 +14,7 @@ export function registerApiTokensEffects(): void {
       const tokens = await service.list.fetch();
       eventBus.emit('profile/api-tokens/loaded', { tokens: tokens ?? [] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load API tokens';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadApiTokens');
       eventBus.emit('profile/api-tokens/error', { error: message });
     }
   });
@@ -27,7 +28,7 @@ export function registerApiTokensEffects(): void {
         eventBus.emit('profile/api-tokens/load');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create API token';
+      const message = error instanceof Error ? error.message : t('errors.failedToCreateApiToken');
       eventBus.emit('profile/api-tokens/error', { error: message });
     }
   });
@@ -39,7 +40,7 @@ export function registerApiTokensEffects(): void {
       eventBus.emit('profile/api-token/deleted', { id });
       eventBus.emit('profile/api-tokens/load');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete API token';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeleteApiToken');
       eventBus.emit('profile/api-tokens/error', { error: message });
     }
   });

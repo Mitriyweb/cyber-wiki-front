@@ -4,6 +4,7 @@
  */
 
 import '@cyberfabric/react';
+import type { HttpStatus } from '@/app/lib/httpStatus';
 import type {
   Space,
   UserSpacePreference,
@@ -60,7 +61,16 @@ declare module '@cyberfabric/react' {
     /** File content loaded */
     'wiki/file/loaded': { filePath: string; content: string };
     /** File content load error */
-    'wiki/file/error': { filePath: string; error: string };
+    /** File content load error. `status` is set when the failure maps to
+     *  a known upstream HTTP status (Unauthorized / Forbidden / NotFound
+     *  from the git provider) so FileViewer can render a status placeholder
+     *  instead of a banner. Always use the shared `HttpStatus` enum from
+     *  `@/app/lib/httpStatus` — never inline numeric literals. */
+    'wiki/file/error': {
+      filePath: string;
+      error: string;
+      status?: HttpStatus;
+    };
     /** Request per-line blame for a file */
     'wiki/blame/load': { space: Space; filePath: string };
     /** Per-line blame loaded — `lines` is empty when provider has no

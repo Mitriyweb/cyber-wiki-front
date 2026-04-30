@@ -9,14 +9,28 @@
 import type { Language } from '@cyberfabric/react';
 
 /**
+ * Backend-supplied JSON value. Used in `UserExtra` and the `settings` blob
+ * on auth responses — both are platform-extension points whose contents are
+ * defined per-deployment, so a recursive JSON type is the tightest safe
+ * shape we can offer without an `unknown` escape hatch.
+ */
+export type ExtraJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ExtraJsonValue[]
+  | { [key: string]: ExtraJsonValue };
+
+/**
  * User Extra Properties
- * Applications extend this via module augmentation for platform-specific fields
- * @public Reserved for future module augmentation
+ * Applications extend this via module augmentation for platform-specific fields.
  */
 export interface UserExtra {
-  // Applications add their types via module augmentation
-  // Empty by default
-  [key: string]: unknown;
+  // Applications add their typed properties via module augmentation. The
+  // open-ended index signature uses ExtraJsonValue so the field type is
+  // still narrow JSON, never `unknown`.
+  [key: string]: ExtraJsonValue;
 }
 
 /**
@@ -71,7 +85,7 @@ export interface LoginResponse {
     first_name: string;
     last_name: string;
     role: string;
-    settings: Record<string, unknown>;
+    settings: Record<string, ExtraJsonValue>;
   };
   token: string;
 }
@@ -86,5 +100,5 @@ export interface MeResponse {
   first_name: string;
   last_name: string;
   role: string;
-  settings: Record<string, unknown>;
+  settings: Record<string, ExtraJsonValue>;
 }

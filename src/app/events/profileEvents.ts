@@ -5,6 +5,7 @@
 
 import '@cyberfabric/react';
 import type { ServiceToken, ServiceTokenCreate, TokenValidationResult, CacheSettings } from '@/app/api/wikiTypes';
+import type { MeResponse } from '@/app/api/types';
 
 declare module '@cyberfabric/react' {
   interface EventPayloadMap {
@@ -39,5 +40,12 @@ declare module '@cyberfabric/react' {
     'profile/cache/update': { settings: Partial<CacheSettings> };
     /** Cache settings updated */
     'profile/cache/updated': { settings: CacheSettings };
+
+    /** Load the full /me response for the profile page */
+    'profile/me/load': void;
+    /** /me response loaded */
+    'profile/me/loaded': { me: MeResponse };
+    /** /me load failed */
+    'profile/me/error': { error: string };
   }
 }

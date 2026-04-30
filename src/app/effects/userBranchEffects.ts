@@ -7,6 +7,7 @@
 
 import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { UserBranchApiService } from '@/app/api/UserBranchApiService';
+import { t } from '@/app/lib/i18n';
 
 export function registerUserBranchEffects(): void {
   // Load workspace overview
@@ -19,7 +20,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/workspace/loaded', { spaceId, workspace });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load workspace';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadWorkspace');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -34,7 +35,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/workspace/load', { spaceId });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create task';
+      const message = error instanceof Error ? error.message : t('errors.failedToCreateTask');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -46,7 +47,7 @@ export function registerUserBranchEffects(): void {
       await service.selectTask.fetch({ branch_id: branchId });
       eventBus.emit('wiki/task/selected', { branchId });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to select task';
+      const message = error instanceof Error ? error.message : t('errors.failedToSelectTask');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -60,7 +61,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/task/renamed', { task });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to rename task';
+      const message = error instanceof Error ? error.message : t('errors.failedToRenameTask');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -77,7 +78,7 @@ export function registerUserBranchEffects(): void {
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete task';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeleteTask');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -96,7 +97,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/pr/created', { result });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create pull request';
+      const message = error instanceof Error ? error.message : t('errors.failedToCreatePullRequest');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -110,7 +111,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/pr/deleted', { branchName: result.branch_name });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete pull request';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeletePullRequest');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -127,7 +128,7 @@ export function registerUserBranchEffects(): void {
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to unstage branch';
+      const message = error instanceof Error ? error.message : t('errors.failedToUnstageBranch');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -141,7 +142,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/branch/rebased', { branchName: result.branch_name });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to rebase branch';
+      const message = error instanceof Error ? error.message : t('errors.failedToRebaseBranch');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });
@@ -155,7 +156,7 @@ export function registerUserBranchEffects(): void {
         eventBus.emit('wiki/branch/discarded', { branchName: result.branch_name });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to discard branch';
+      const message = error instanceof Error ? error.message : t('errors.failedToDiscardBranch');
       eventBus.emit('wiki/branch/error', { error: message });
     }
   });

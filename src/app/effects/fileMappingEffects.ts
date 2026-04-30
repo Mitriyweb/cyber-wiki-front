@@ -6,6 +6,7 @@
 
 import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { FileMappingApiService } from '@/app/api/FileMappingApiService';
+import { t } from '@/app/lib/i18n';
 
 export function registerFileMappingEffects(): void {
   // Load mappings
@@ -16,7 +17,7 @@ export function registerFileMappingEffects(): void {
       const mappings = await service.list(spaceSlug);
       eventBus.emit('wiki/file-mappings/loaded', { spaceSlug, mappings: mappings ?? [] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load file mappings';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadFileMappings');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -31,7 +32,7 @@ export function registerFileMappingEffects(): void {
         eventBus.emit('wiki/file-mappings/load', { spaceSlug });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create file mapping';
+      const message = error instanceof Error ? error.message : t('errors.failedToCreateFileMapping');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -46,7 +47,7 @@ export function registerFileMappingEffects(): void {
         eventBus.emit('wiki/file-mappings/load', { spaceSlug });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update file mapping';
+      const message = error instanceof Error ? error.message : t('errors.failedToUpdateFileMapping');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -59,7 +60,7 @@ export function registerFileMappingEffects(): void {
       eventBus.emit('wiki/file-mapping/deleted', { spaceSlug, id });
       eventBus.emit('wiki/file-mappings/load', { spaceSlug });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete file mapping';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeleteFileMapping');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -75,7 +76,7 @@ export function registerFileMappingEffects(): void {
       });
       eventBus.emit('wiki/file-mappings/load', { spaceSlug });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to bulk-update file mappings';
+      const message = error instanceof Error ? error.message : t('errors.failedToBulkUpdateFileMappings');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -98,7 +99,7 @@ export function registerFileMappingEffects(): void {
         }
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : 'Failed to apply folder rule';
+          error instanceof Error ? error.message : t('errors.failedToApplyFolderRule');
         eventBus.emit('wiki/file-mapping/error', { error: message });
       }
     },
@@ -118,7 +119,7 @@ export function registerFileMappingEffects(): void {
           });
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to extract names';
+        const message = error instanceof Error ? error.message : t('errors.failedToExtractNames');
         eventBus.emit('wiki/file-mapping/error', { error: message });
       }
     },
@@ -135,7 +136,7 @@ export function registerFileMappingEffects(): void {
       });
       eventBus.emit('wiki/file-mappings/load', { spaceSlug });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to refresh file mappings';
+      const message = error instanceof Error ? error.message : t('errors.failedToRefreshFileMappings');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });
@@ -151,7 +152,7 @@ export function registerFileMappingEffects(): void {
       });
       eventBus.emit('wiki/file-mappings/load', { spaceSlug });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to sync file mappings';
+      const message = error instanceof Error ? error.message : t('errors.failedToSyncFileMappings');
       eventBus.emit('wiki/file-mapping/error', { error: message });
     }
   });

@@ -7,6 +7,8 @@
 import { eventBus, apiRegistry } from '@cyberfabric/react';
 import { ServiceTokensApiService } from '@/app/api/ServiceTokensApiService';
 import { UserSettingsApiService } from '@/app/api/UserSettingsApiService';
+import { AccountsApiService } from '@/app/api/AccountsApiService';
+import { t } from '@/app/lib/i18n';
 
 let forceRefresh = false;
 
@@ -18,7 +20,7 @@ export function registerProfileEffects(): void {
       forceRefresh = false;
       eventBus.emit('profile/tokens/loaded', { tokens: tokens ?? [] });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load tokens';
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadTokens');
       eventBus.emit('profile/tokens/error', { error: message });
     }
   });
@@ -34,7 +36,7 @@ export function registerProfileEffects(): void {
       forceRefresh = true;
       eventBus.emit('profile/tokens/load');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save token';
+      const message = error instanceof Error ? error.message : t('errors.failedToSaveToken');
       eventBus.emit('profile/tokens/error', { error: message });
     }
   });
@@ -47,7 +49,7 @@ export function registerProfileEffects(): void {
       forceRefresh = true;
       eventBus.emit('profile/tokens/load');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete token';
+      const message = error instanceof Error ? error.message : t('errors.failedToDeleteToken');
       eventBus.emit('profile/tokens/error', { error: message });
     }
   });
@@ -60,7 +62,7 @@ export function registerProfileEffects(): void {
       forceRefresh = true;
       eventBus.emit('profile/tokens/load');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Validation failed';
+      const message = error instanceof Error ? error.message : t('errors.validationFailed');
       eventBus.emit('profile/tokens/validated', {
         id,
         result: { valid: false, message, details: {} },
@@ -91,7 +93,7 @@ export function registerProfileEffects(): void {
               });
             }
           } catch (error) {
-            const msg = error instanceof Error ? error.message : 'Validation failed';
+            const msg = error instanceof Error ? error.message : t('errors.validationFailed');
             eventBus.emit('profile/tokens/validated', {
               id: token.id,
               result: { valid: false, message: msg, details: {} },
@@ -136,8 +138,23 @@ export function registerProfileEffects(): void {
         eventBus.emit('profile/cache/updated', { settings: updated });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update cache settings';
+      const message = error instanceof Error ? error.message : t('errors.failedToUpdateCacheSettings');
       eventBus.emit('profile/tokens/error', { error: message });
+    }
+  });
+
+  // ── Full /me response (Profile page) ──────────────────────────────────
+
+  eventBus.on('profile/me/load', async () => {
+    try {
+      const service = apiRegistry.getService(AccountsApiService);
+      const me = await service.me.fetch();
+      if (me) {
+        eventBus.emit('profile/me/loaded', { me });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('errors.failedToLoadUserInfo');
+      eventBus.emit('profile/me/error', { error: message });
     }
   });
 }

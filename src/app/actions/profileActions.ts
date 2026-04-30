@@ -34,3 +34,7 @@ export function loadCacheSettings(): void {
 export function updateCacheSettings(settings: Partial<CacheSettings>): void {
   eventBus.emit('profile/cache/update', { settings });
 }
+
+export function loadProfileMe(): void {
+  eventBus.emit('profile/me/load');
+}

@@ -30,6 +30,7 @@ import '@/app/events/fileMappingEvents';
 import '@/app/events/apiTokensEvents';
 import '@/app/events/userSettingsEvents';
 import '@/app/events/profileEvents';
+import '@/app/events/gitOpsLogEvents';
 import { registerBootstrapEffects } from '@/app/effects/bootstrapEffects';
 import { registerWikiEffects } from '@/app/effects/wikiEffects';
 import { registerEnrichmentEffects } from '@/app/effects/enrichmentEffects';
@@ -39,6 +40,7 @@ import { registerFileMappingEffects } from '@/app/effects/fileMappingEffects';
 import { registerApiTokensEffects } from '@/app/effects/apiTokensEffects';
 import { registerUserSettingsEffects } from '@/app/effects/userSettingsEffects';
 import { registerProfileEffects } from '@/app/effects/profileEffects';
+import { registerGitOpsLogEffects } from '@/app/effects/gitOpsLogEffects';
 
 // Register API services
 apiRegistry.register(AccountsApiService);
@@ -73,5 +75,6 @@ registerFileMappingEffects();
 registerApiTokensEffects();
 registerUserSettingsEffects();
 registerProfileEffects();
+registerGitOpsLogEffects();
 
 export { app };
